@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import './StatusViewer.css';
 
@@ -13,11 +13,9 @@ export default function StatusViewer({ onClose }: StatusViewerProps) {
   const [showViewersModal, setShowViewersModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // جلب أحدث حالة ومشاهدين من Supabase عند الفتح
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. جلب أحدث حالة من جدول status
         const { data: statusData } = await supabase
           .from('status')
           .select('*')
@@ -28,7 +26,6 @@ export default function StatusViewer({ onClose }: StatusViewerProps) {
           setCurrentStatus(statusData[0]);
         }
 
-        // 2. جلب المشاهدين من جدول viewers
         const { data: viewersData } = await supabase
           .from('viewers')
           .select('*')
@@ -47,7 +44,7 @@ export default function StatusViewer({ onClose }: StatusViewerProps) {
     fetchData();
   }, []);
 
-  // شريط التقدم العلوي (يعد لمدة 5 ثوانٍ مثلاً ثم يغلق أو ينتقل)
+  // إصلاح مشكلة شريط التقدم والـ setInterval
   useEffect(() => {
     if (loading) return;
     
@@ -55,11 +52,11 @@ export default function StatusViewer({ onClose }: StatusViewerProps) {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
-          onClose(); // إغلاق الصفحة عند انتهاء الشريط
+          onClose();
           return 100;
         }
-        return prev + 1; // زيادة التدريج
-      }, 50); // 50ms * 100 = 5 ثوانٍ تقريباً
+        return prev + 1;
+      });
     }, 50);
 
     return () => clearInterval(interval);
@@ -71,15 +68,12 @@ export default function StatusViewer({ onClose }: StatusViewerProps) {
 
   return (
     <div className="status-viewer-container">
-      {/* شريط التقدم العلوي */}
       <div className="progress-bar-container">
         <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
       </div>
 
-      {/* زر الإغلاق أو الرجوع */}
       <button className="viewer-close-btn" onClick={onClose}>&times;</button>
 
-      {/* محتوى الحالة (صورة الخلفية والنص) */}
       <div className="status-media-content">
         {currentStatus?.image_url ? (
           <img src={currentStatus.image_url} alt="Status" className="status-bg-image" />
@@ -91,7 +85,6 @@ export default function StatusViewer({ onClose }: StatusViewerProps) {
         )}
       </div>
 
-      {/* الشريط السفلي: أيقونة العين وعدد المشاهدات */}
       <div className="status-footer-bar" onClick={() => setShowViewersModal(true)}>
         <div className="views-count-badge">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -102,7 +95,6 @@ export default function StatusViewer({ onClose }: StatusViewerProps) {
         <span className="viewers-text-label">التفقد بواسطة المشاهدين</span>
       </div>
 
-      {/* نافذة منبثقة (Modal) لقائمة المشاهدين مع السكرول مثل واتساب */}
       {showViewersModal && (
         <div className="viewers-modal-backdrop" onClick={() => setShowViewersModal(false)}>
           <div className="viewers-modal-content" onClick={(e) => e.stopPropagation()}>
